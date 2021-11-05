@@ -18,5 +18,6 @@ Sample project that locks and encrypts windows 32-bit executables with password.
 * Build Solution
 
 ## Materials
-* [PE32 Password.pdf](https://github.com/ytk2128/pe32-password/blob/main/doc/PE32_Password.pdf)
+* [PE32_Password.pdf](https://github.com/ytk2128/pe32-password/blob/main/doc/PE32_Password.pdf)
+* [PE32_Password.pptx](https://github.com/ytk2128/pe32-password/blob/main/doc/PE32_Password.pptx?raw=true)
 * [Demo.mp4](https://github.com/ytk2128/pe32-password/blob/main/doc/Demo.mp4?raw=true)
