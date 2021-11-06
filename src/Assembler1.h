@@ -8,7 +8,6 @@ using namespace asmtk;
 
 #include <string>
 #include <vector>
-#include <Windows.h>
 #include <algorithm>
 #include <map>
 #include <regex>

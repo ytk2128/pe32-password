@@ -1,4 +1,3 @@
-#include <iostream>
 #include "pepw.h"
 #include "PE/PEBase.h"
 #include "PE/PEResource.h"
@@ -6,10 +5,6 @@
 #include "PE/Exception.h"
 
 #include "Assembler1.h"
-
-#include <vector>
-
-
 #include "SEED_KeySchedKey.h"
 #include "SEED_Decrypt.h"
 #include "ZeroMemory.h"
@@ -21,55 +16,7 @@
 #include "TLSCallback.h"
 #include "InitializeVariables.h"
 
-
-#include <algorithm>
-#include <string>
-#include <iostream>
-#include <sstream>
-
-#include <functional>
-#include <iostream>
-
-//#include <asmjit/asmjit.h>
-//#include <asmtk/asmtk.h>
-//using namespace asmjit;
-//using namespace asmtk;
-// Used to print binary code as hex.
-static void dumpCode(const uint8_t* buf, size_t size) {
-	enum { kCharsPerLine = 39 };
-	char hex[kCharsPerLine * 2 + 1];
-
-	size_t i = 0;
-	while (i < size) {
-		size_t j = 0;
-		size_t end = size - i < kCharsPerLine ? size - i : size_t(kCharsPerLine);
-
-		end += i;
-		while (i < end) {
-			uint8_t b0 = buf[i] >> 4;
-			uint8_t b1 = buf[i] & 15;
-
-			hex[j++] = b0 < 10 ? '0' + b0 : 'A' + b0 - 10;
-			hex[j++] = b1 < 10 ? '0' + b1 : 'A' + b1 - 10;
-			i++;
-		}
-
-		hex[j] = '\0';
-		puts(hex);
-	}
-}
-std::string ReplaceAll(std::string str, const std::string& from, const std::string& to) {
-	size_t start_pos = 0;
-	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
-		str.replace(start_pos, from.length(), to);
-		start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
-	}
-	return str;
-}
 int main(int argc, char** argv) {
-	//argc = 2;
-	//argv[1] = new char[300];
-	//strcpy_s(argv[1], 300, R"(C:\Users\root\Desktop\pe32-password\src\Debug\Dbgview.exe)");
 
 	if (argc < 2) {
 		std::cout << "Usage: pepw [file name]\n\n";
