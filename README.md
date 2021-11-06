@@ -13,7 +13,7 @@ Sample project that locks and encrypts windows 32-bit executables with password.
 
 ## Build instructions
 * Open **pepw.sln**
-* Set **Solution Platforms -> x64**
+* Set **Solution Platforms -> x86**
 * Set **Project -> Properties -> Advanced -> Character Set -> Use Multi-Byte Character Set**
 * Build Solution
 
