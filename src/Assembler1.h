@@ -1,6 +1,5 @@
 #pragma once
 
-#define ASMJIT_EMBED
 #include <asmjit/asmjit.h>
 #include <asmtk/asmtk.h>
 using namespace asmjit;
@@ -12,8 +11,7 @@ using namespace asmtk;
 #include <map>
 #include <regex>
 
-class Assembler1
-{
+class Assembler1 {
 public:
 	Assembler1(std::string asmScript);
 
@@ -23,7 +21,7 @@ public:
 		return *this;
 	}
 
-	typedef uint32_t (*fun)(std::string);
+	typedef uint32_t(*fun)(std::string);
 	Assembler1& setFunction(std::string name, fun value) {
 		functionMap.insert(std::pair<std::string, fun>(name, value));
 		//script = ReplaceAll(script, name, std::to_string(value));
@@ -32,7 +30,7 @@ public:
 
 	std::string getBuildScript();
 	std::vector<uint8_t> getVector();
-	
+
 	bool build();
 	bool error();
 
