@@ -73,7 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;ASMJIT_STATIC;ASMTK_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)deps\asmjit\src;$(ProjectDir)deps\asmtk\src</AdditionalIncludeDirectories>
     </ClCompile>
@@ -85,7 +85,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Assembler1.cpp" />
+    <ClCompile Include="Asm\AsmBuilder.cpp" />
     <ClCompile Include="deps\asmjit\src\asmjit\core\archtraits.cpp" />
     <ClCompile Include="deps\asmjit\src\asmjit\core\assembler.cpp" />
     <ClCompile Include="deps\asmjit\src\asmjit\core\builder.cpp" />
@@ -143,8 +143,8 @@
     <ClCompile Include="SEED128\KISA_SEED_ECB.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Assembler1.h" />
-    <ClInclude Include="CheckPassword.h" />
+    <ClInclude Include="AsmFunction.h" />
+    <ClInclude Include="Asm\AsmBuilder.h" />
     <ClInclude Include="deps\asmjit\src\asmjit\asmjit-scope-begin.h" />
     <ClInclude Include="deps\asmjit\src\asmjit\asmjit-scope-end.h" />
     <ClInclude Include="deps\asmjit\src\asmjit\asmjit.h" />
@@ -223,23 +223,14 @@
     <ClInclude Include="deps\asmtk\src\asmtk\globals.h" />
     <ClInclude Include="deps\asmtk\src\asmtk\parserutils.h" />
     <ClInclude Include="deps\asmtk\src\asmtk\strtod.h" />
-    <ClInclude Include="DialogProcedure.h" />
-    <ClInclude Include="InitializeVariables.h" />
-    <ClInclude Include="Kernel32Function.h" />
     <ClInclude Include="pepw.h" />
     <ClInclude Include="PE\Exception.h" />
     <ClInclude Include="PE\Log.h" />
     <ClInclude Include="PE\PEBase.h" />
     <ClInclude Include="PE\PERelocation.h" />
     <ClInclude Include="PE\PEResource.h" />
-    <ClInclude Include="RtlCompareMemory.h" />
     <ClInclude Include="SEED128\KISA_SEED_ECB.h" />
     <ClInclude Include="SEED128\SEED128.h" />
-    <ClInclude Include="SEED_Decrypt.h" />
-    <ClInclude Include="SEED_KeySchedKey.h" />
-    <ClInclude Include="SHA256.h" />
-    <ClInclude Include="TLSCallback.h" />
-    <ClInclude Include="ZeroMemory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

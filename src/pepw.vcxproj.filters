@@ -21,7 +21,7 @@
     <Filter Include="asmtk">
       <UniqueIdentifier>{09759227-a7cc-4b31-a84e-6542c9e06682}</UniqueIdentifier>
     </Filter>
-    <Filter Include="asm">
+    <Filter Include="Asm">
       <UniqueIdentifier>{7f50d90f-c7ea-4fa3-b113-2bccfd58cb62}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -40,9 +40,6 @@
     </ClCompile>
     <ClCompile Include="PE\PERelocation.cpp">
       <Filter>PE</Filter>
-    </ClCompile>
-    <ClCompile Include="Assembler1.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="deps\asmjit\src\asmjit\core\archtraits.cpp">
       <Filter>asmjit</Filter>
@@ -194,6 +191,9 @@
     <ClCompile Include="deps\asmtk\src\asmtk\asmparser.cpp">
       <Filter>asmtk</Filter>
     </ClCompile>
+    <ClCompile Include="Asm\AsmBuilder.cpp">
+      <Filter>Asm</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PE\Exception.h">
@@ -219,39 +219,6 @@
     </ClInclude>
     <ClInclude Include="PE\PERelocation.h">
       <Filter>PE</Filter>
-    </ClInclude>
-    <ClInclude Include="CheckPassword.h">
-      <Filter>asm</Filter>
-    </ClInclude>
-    <ClInclude Include="DialogProcedure.h">
-      <Filter>asm</Filter>
-    </ClInclude>
-    <ClInclude Include="Kernel32Function.h">
-      <Filter>asm</Filter>
-    </ClInclude>
-    <ClInclude Include="RtlCompareMemory.h">
-      <Filter>asm</Filter>
-    </ClInclude>
-    <ClInclude Include="SEED_Decrypt.h">
-      <Filter>asm</Filter>
-    </ClInclude>
-    <ClInclude Include="SEED_KeySchedKey.h">
-      <Filter>asm</Filter>
-    </ClInclude>
-    <ClInclude Include="SHA256.h">
-      <Filter>asm</Filter>
-    </ClInclude>
-    <ClInclude Include="ZeroMemory.h">
-      <Filter>asm</Filter>
-    </ClInclude>
-    <ClInclude Include="TLSCallback.h">
-      <Filter>asm</Filter>
-    </ClInclude>
-    <ClInclude Include="Assembler1.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InitializeVariables.h">
-      <Filter>asm</Filter>
     </ClInclude>
     <ClInclude Include="deps\asmjit\src\asmjit\asmjit-scope-begin.h">
       <Filter>asmjit</Filter>
@@ -486,6 +453,12 @@
     </ClInclude>
     <ClInclude Include="deps\asmtk\src\asmtk\asmtk.h">
       <Filter>asmtk</Filter>
+    </ClInclude>
+    <ClInclude Include="Asm\AsmBuilder.h">
+      <Filter>Asm</Filter>
+    </ClInclude>
+    <ClInclude Include="AsmFunction.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

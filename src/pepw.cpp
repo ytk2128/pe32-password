@@ -4,17 +4,9 @@
 #include "PE/PERelocation.h"
 #include "PE/Exception.h"
 
-#include "Assembler1.h"
-#include "SEED_KeySchedKey.h"
-#include "SEED_Decrypt.h"
-#include "ZeroMemory.h"
-#include "SHA256.h"
-#include "RtlCompareMemory.h"
-#include "CheckPassword.h"
-#include "DialogProcedure.h"
-#include "Kernel32Function.h"
-#include "TLSCallback.h"
-#include "InitializeVariables.h"
+#include "Asm/AsmBuilder.h"
+#include "AsmFunction.h"
+
 
 int main(int argc, char** argv) {
 
@@ -169,31 +161,32 @@ int main(int argc, char** argv) {
 
 		for (WORD i = 0; i < pResDir->NumberOfIdEntries + pResDir->NumberOfNamedEntries; i++) {
 			switch (pResEntry[i].Name) {
-			case (DWORD)RT_ICON:
-			case (DWORD)RT_GROUP_ICON:
-			case (DWORD)RT_VERSION:
-			case (DWORD)RT_MANIFEST:
-				break;
+				case (DWORD)RT_ICON:
+				case (DWORD)RT_GROUP_ICON:
+				case (DWORD)RT_VERSION:
+				case (DWORD)RT_MANIFEST:
+					break;
 
-			default: {
-				resPtr = baseAddr + (pResEntry[i].OffsetToData ^ 0x80000000);
+				default:
+				{
+					resPtr = baseAddr + (pResEntry[i].OffsetToData ^ 0x80000000);
 
-				auto pResDir2 = (PIMAGE_RESOURCE_DIRECTORY)(file.data() + resPtr);
-				auto pResEntry2 = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(file.data() + resPtr + sizeof(IMAGE_RESOURCE_DIRECTORY));
+					auto pResDir2 = (PIMAGE_RESOURCE_DIRECTORY)(file.data() + resPtr);
+					auto pResEntry2 = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(file.data() + resPtr + sizeof(IMAGE_RESOURCE_DIRECTORY));
 
-				for (WORD j = 0; j < pResDir2->NumberOfIdEntries + pResDir2->NumberOfNamedEntries; j++) {
-					resPtr = baseAddr + (pResEntry2[j].OffsetToData ^ 0x80000000);
-					auto pResEntry3 = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(file.data() + resPtr + sizeof(IMAGE_RESOURCE_DIRECTORY));
-					resPtr = baseAddr + pResEntry3->OffsetToData;
-					auto pResDataEntry = (PIMAGE_RESOURCE_DATA_ENTRY)(file.data() + resPtr);
+					for (WORD j = 0; j < pResDir2->NumberOfIdEntries + pResDir2->NumberOfNamedEntries; j++) {
+						resPtr = baseAddr + (pResEntry2[j].OffsetToData ^ 0x80000000);
+						auto pResEntry3 = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(file.data() + resPtr + sizeof(IMAGE_RESOURCE_DIRECTORY));
+						resPtr = baseAddr + pResEntry3->OffsetToData;
+						auto pResDataEntry = (PIMAGE_RESOURCE_DATA_ENTRY)(file.data() + resPtr);
 
-					if (pResDataEntry->Size >= 16) {
-						auto data = file.rvaToAddr(pResDataEntry->OffsetToData);
-						encryptData(file.data() + data.raw, pResDataEntry->Size, roundKey);
-						file << (data.rva + pResDataEntry->Size - 16) << data.rva;
+						if (pResDataEntry->Size >= 16) {
+							auto data = file.rvaToAddr(pResDataEntry->OffsetToData);
+							encryptData(file.data() + data.raw, pResDataEntry->Size, roundKey);
+							file << (data.rva + pResDataEntry->Size - 16) << data.rva;
+						}
 					}
 				}
-			}
 
 			}
 		}
@@ -223,7 +216,7 @@ int main(int argc, char** argv) {
 		*/
 		auto seedKeySched = file.getPos();
 
-		Assembler1 SEED_KeySchedKey(szSEED_KeySchedKey);
+		AsmBuilder SEED_KeySchedKey(asmSEED_KeySchedKey);
 		SEED_KeySchedKey
 			.setSymbol("SS0", S0.rva)
 			.setSymbol("SS1", S1.rva)
@@ -247,7 +240,7 @@ int main(int argc, char** argv) {
 		*/
 		auto seedDecrypt = file.getPos();
 
-		Assembler1 SEED_Decrypt(szSEED_Decrypt);
+		AsmBuilder SEED_Decrypt(asmSEED_Decrypt);
 		SEED_Decrypt
 			.setSymbol("S0.rva", S0.rva)
 			.setSymbol("S1.rva", S1.rva)
@@ -274,7 +267,7 @@ int main(int argc, char** argv) {
 
 		auto zeroMemory = file.getPos();
 
-		Assembler1 vZeroMemory(szZeroMemory);
+		AsmBuilder vZeroMemory(asmZeroMemory);
 		vZeroMemory.build();
 		if (vZeroMemory.error()) {
 			std::cerr << "ZeroMemory Error\n\n";
@@ -292,7 +285,7 @@ int main(int argc, char** argv) {
 		* call func
 		*/
 
-		Assembler1 vSHAA256(szSHA256);
+		AsmBuilder vSHAA256(asmSHA256);
 		vSHAA256
 			.setSymbol("funcCryptAcquireContextA.rva", funcCryptAcquireContextA.rva)
 			.setSymbol("funcCryptCreateHash.rva", funcCryptCreateHash.rva)
@@ -321,7 +314,7 @@ int main(int argc, char** argv) {
 		* call func
 		*/
 
-		Assembler1 vRtlCompareMemory(szRtlCompareMemory);
+		AsmBuilder vRtlCompareMemory(asmRtlCompareMemory);
 		vRtlCompareMemory.build();
 		if (vRtlCompareMemory.error()) {
 			std::cerr << "RtlCompareMemory Error\n\n";
@@ -335,7 +328,7 @@ int main(int argc, char** argv) {
 #pragma region Check Password
 		auto checkPassword = file.getPos();
 
-		Assembler1 vCheckPassword(szCheckPassword);
+		AsmBuilder vCheckPassword(asmCheckPassword);
 		vCheckPassword
 			.setSymbol("hashBuffer.rva", hashBuffer.rva)
 			.setSymbol("pwBuffer.rva", pwBuffer.rva)
@@ -361,7 +354,7 @@ int main(int argc, char** argv) {
 		// if the password is correct, the return value of EndDialog will be 0, otherwise 1.
 		auto dialogProc = file.getPos();
 
-		Assembler1 vDialogProcedure(szDialogProcedure);
+		AsmBuilder vDialogProcedure(asmDialogProcedure);
 		vDialogProcedure
 			.setSymbol("pwBuffer.rva", pwBuffer.rva)
 			.setSymbol("zeroMemory.rva", zeroMemory.rva)
@@ -382,7 +375,7 @@ int main(int argc, char** argv) {
 
 #pragma region Kernel32 Function
 		auto kernel32Function = file.getPos();
-		Assembler1 vKernel32Function(szKernel32Function);
+		AsmBuilder vKernel32Function(asmKernel32Function);
 		vKernel32Function.build();
 		if (vKernel32Function.error()) {
 			std::cerr << "Kernel32Function Error\n\n";
@@ -395,7 +388,7 @@ int main(int argc, char** argv) {
 		auto tlsCallback = file.getPos();
 		if (file.TLSDirectory->VirtualAddress) {
 
-			Assembler1 vTLSCallback(szTLSCallback);
+			AsmBuilder vTLSCallback(asmTLSCallback);
 			vTLSCallback.setSymbol("AddressOfCallBacks.RVA", oldTLSDirectory.AddressOfCallBacks - *file.ImageBase);
 			vTLSCallback.build();
 			if (vTLSCallback.error()) {
@@ -413,7 +406,7 @@ int main(int argc, char** argv) {
 
 #pragma region Prologue
 
-		Assembler1 Prologue(
+		AsmBuilder Prologue(
 			R"(
 				pushad
 				mov ebx, dword ptr fs:[0x00000030]
@@ -445,7 +438,7 @@ int main(int argc, char** argv) {
 #pragma endregion
 
 #pragma region Initialize variables
-		Assembler1 InitializeVariables(szInitializeVariables);
+		AsmBuilder InitializeVariables(asmInitializeVariables);
 		InitializeVariables
 			.setSymbol("funcLoadLibraryA.rva", funcLoadLibraryA.rva)
 			.setSymbol("szUser32.rva", szUser32.rva)
@@ -486,7 +479,7 @@ int main(int argc, char** argv) {
 
 #pragma region Show password dialog
 		// Show dialog
-		Assembler1 ShowPasswordDialog(R"(
+		AsmBuilder ShowPasswordDialog(R"(
 			push 0x0
 			lea edx, ds:[ebx+dialogProc.rva]
 			push edx
@@ -513,7 +506,7 @@ int main(int argc, char** argv) {
 		// check eax. if eax is 1, dialog was closed by the user so exit process.
 		// if eax is 0, the password is correct so decrypt binary using generated round key.
 
-		Assembler1 DecryptSections(R"(
+		AsmBuilder DecryptSections(R"(
 			test eax, eax
 			je label_decrypt
 			push hashGenerate("ExitProcess")
@@ -562,7 +555,7 @@ int main(int argc, char** argv) {
 #pragma region Recover PE Header
 		// Recover import directory
 		if (file.ImportDirectory->VirtualAddress) {
-			Assembler1 RecoverImportDirectory(R"(
+			AsmBuilder RecoverImportDirectory(R"(
 				lea esi, ds:[ebx+ImportDirectoryRVA]
 			loop1:
 				mov eax, dword ptr ds:[esi+0xC]
@@ -621,7 +614,7 @@ int main(int argc, char** argv) {
 		// Recover relocation directory
 		if (*file.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE && oldRelocationDirectory.rva) {
 
-			Assembler1 RecoverRelocationDirectory(R"(
+			AsmBuilder RecoverRelocationDirectory(R"(
 				mov edi, ImageBase
 				lea esi, ds:[ebx+oldRelocationDirectory.rva]
 			loop1:
@@ -665,7 +658,7 @@ int main(int argc, char** argv) {
 		// Recover TLS directory
 		if (file.TLSDirectory->VirtualAddress) {
 
-			Assembler1 RecoverTLSDirectory(R"(
+			AsmBuilder RecoverTLSDirectory(R"(
 				push 0
 				push 1
 				push ebx
@@ -686,7 +679,7 @@ int main(int argc, char** argv) {
 
 #pragma region Epilogue
 
-		Assembler1 Epilogue(R"(
+		AsmBuilder Epilogue(R"(
 			lea edx, ds:[ebx+OEP.rva]
 			mov dword ptr ss:[esp+0x1C], edx
 			popad

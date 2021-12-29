@@ -1,12 +1,11 @@
-#include "Assembler1.h"
+#include "AsmBuilder.h"
 
-Assembler1::Assembler1(std::string asmScript)
-{
+AsmBuilder::AsmBuilder(std::string asmScript) {
 	script = asmScript;
 }
 
 
-std::string Assembler1::ReplaceAll(std::string str, const std::string& from, const std::string& to) {
+std::string AsmBuilder::ReplaceAll(std::string str, const std::string& from, const std::string& to) {
 	size_t start_pos = 0;
 	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
 		str.replace(start_pos, from.length(), to);
@@ -15,10 +14,10 @@ std::string Assembler1::ReplaceAll(std::string str, const std::string& from, con
 	return str;
 }
 
-bool Assembler1::build() {
+bool AsmBuilder::build() {
 	std::map<std::string, fun>::iterator iter;
 	for (iter = functionMap.begin(); iter != functionMap.end(); iter++) {
-	
+
 		std::regex re(iter->first + R"(.*\))");
 		std::smatch match;
 		while (std::regex_search(script, match, re)) {
@@ -40,18 +39,18 @@ bool Assembler1::build() {
 		}
 	}
 
-	Environment environment;
-	environment.init(Environment::kArchX86);
+	asmjit::Environment environment;
+	environment.init(asmjit::Environment::kArchX86);
 
-	CodeHolder code;
-	Error error = code.init(environment, 0);
+	asmjit::CodeHolder code;
+	asmtk::Error error = code.init(environment, 0);
 	if (error) {
 		buildError = error;
 		return false;
 	}
 
-	x86::Assembler a(&code);
-	AsmParser p(&a);
+	asmjit::x86::Assembler a(&code);
+	asmtk::AsmParser p(&a);
 
 	error = p.parse(script.c_str());
 	if (error) {
@@ -59,20 +58,20 @@ bool Assembler1::build() {
 		return false;
 	}
 
-	CodeBuffer& buffer = code.sectionById(0)->buffer();
+	asmjit::CodeBuffer& buffer = code.sectionById(0)->buffer();
 	binary = std::vector<uint8_t>(buffer.data(), buffer.data() + buffer.size());
 	return true;
 }
 
-std::vector<uint8_t> Assembler1::getVector() {
+std::vector<uint8_t> AsmBuilder::getVector() {
 	return binary;
 }
 
-bool Assembler1::error() {
+bool AsmBuilder::error() {
 	return buildError;
 }
 
-std::string Assembler1::getBuildScript() {
+std::string AsmBuilder::getBuildScript() {
 	std::map<std::string, fun>::iterator iter;
 
 	for (iter = functionMap.begin(); iter != functionMap.end(); iter++) {
