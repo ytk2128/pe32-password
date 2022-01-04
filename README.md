@@ -12,9 +12,8 @@ Sample project that locks and encrypts windows 32-bit executables with password.
 ![executable before encryption](https://raw.githubusercontent.com/ytk2128/pe32-password/main/doc/after.svg?token=AOLEOH6SY2LOYCHE7YG4PFTBRZVJU)
 
 ## Build instructions
-* Open **pepw.sln**
-* Set **Solution Platforms -> x86**
-* Set **Project -> Properties -> Advanced -> Character Set -> Use Multi-Byte Character Set**
+* ```git clone https://github.com/ytk2128/pe32-password.git --recurse-submodules```
+* Open **src/pepw.sln**
 * Build Solution
 
 ## Materials
