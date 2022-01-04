@@ -6,6 +6,8 @@ Sample project that locks and encrypts windows 32-bit executables with password.
   * made by [ytk2128](https://ytk2128.github.io) for modifying windows pe32 executables and injecting assembly code into executables
 * [SEED128 ECB](https://seed.kisa.or.kr/kisa/Board/17/detailView.do)
   * symmetric-key algorithm provided by [Korea Internet & Security Agency](https://www.kisa.or.kr/main.jsp)
+* [AsmJit](https://github.com/asmjit/asmjit)
+  * a lightweight library for machine code generation written in C++ language
 
 ## Principle of encryption
 ![executable before encryption](https://raw.githubusercontent.com/ytk2128/pe32-password/main/doc/before.svg?token=AOLEOH4JRZ4XWXETO5D4BFTBRZVM2)
