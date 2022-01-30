@@ -1,5 +1,5 @@
 # 🔐 pe32-password
-Sample project that locks and encrypts windows 32-bit executables with password.
+Sample project that encrypts windows 32-bit executables with password.
 
 ## Libraries used in this project
 * PE32
