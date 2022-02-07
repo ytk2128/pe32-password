@@ -9,7 +9,7 @@ namespace pe32 {
 	{}
 
 	void PERelocation::push_rva(DWORD rva) {
-		_data.emplace_back(rva, std::vector<WORD>());
+		_data.emplace_back(rva, vector<WORD>());
 	}
 
 	void PERelocation::push_data(DWORD rva) {

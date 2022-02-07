@@ -19,8 +19,8 @@ namespace pe32 {
 		_subDirSize += sizeof(IMAGE_RESOURCE_DIRECTORY);
 	}
 
-	void PEResource::push_data(DWORD id, DWORD name, BYTE* data, std::size_t size) {
-		_rData.back().second.emplace_back(id, name, std::vector<BYTE>(data, data + size));
+	void PEResource::push_data(DWORD id, DWORD name, BYTE* data, size_t size) {
+		_rData.back().second.emplace_back(id, name, vector<BYTE>(data, data + size));
 		_subDirSize += sizeof(IMAGE_RESOURCE_DIRECTORY_ENTRY);
 		_finalDirSize += sizeof(IMAGE_RESOURCE_DIRECTORY) + sizeof(IMAGE_RESOURCE_DIRECTORY_ENTRY);
 		_dataEntrySize += sizeof(IMAGE_RESOURCE_DATA_ENTRY);
@@ -89,7 +89,7 @@ namespace pe32 {
 
 			for (auto& j : i.second) {
 				pResEntry = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(_file.data() + subDir.raw);
-				pResEntry->Name = std::get<0>(j);
+				pResEntry->Name = get<0>(j);
 				pResEntry->OffsetToData = (finalDir.raw - baseDir.raw) ^ 0x80000000;
 				subDir += sizeof(IMAGE_RESOURCE_DIRECTORY_ENTRY);
 
@@ -98,12 +98,12 @@ namespace pe32 {
 				finalDir += sizeof(IMAGE_RESOURCE_DIRECTORY);
 
 				pResEntry = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(_file.data() + finalDir.raw);
-				pResEntry->Name = std::get<1>(j);
+				pResEntry->Name = get<1>(j);
 				pResEntry->OffsetToData = dataEntry.raw - baseDir.raw;
 				finalDir += sizeof(IMAGE_RESOURCE_DIRECTORY_ENTRY);
 
-				auto dataPtr = std::get<2>(j).data();
-				auto dataSize = std::get<2>(j).size();
+				auto dataPtr = get<2>(j).data();
+				auto dataSize = get<2>(j).size();
 				pDataEntry = (PIMAGE_RESOURCE_DATA_ENTRY)(_file.data() + dataEntry.raw);
 				pDataEntry->OffsetToData = dataTable.rva;
 				pDataEntry->Size = dataSize;
@@ -119,7 +119,7 @@ namespace pe32 {
 		_file.ResourceDirectory->Size = dataTable.raw - baseDir.raw;
 	}
 
-	std::size_t PEResource::size() const {
+	size_t PEResource::size() const {
 		return _baseDirSize + _subDirSize + _finalDirSize + _dataEntrySize + _dataSize;
 	}
 }

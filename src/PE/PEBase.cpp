@@ -22,24 +22,24 @@ namespace pe32 {
 		raw = _raw, rva = _rva, va = _va;
 	}
 
-	addr addr::operator+(std::size_t rhs) {
+	addr addr::operator+(size_t rhs) {
 		addr r = *this;
 		r += rhs;
 		return r;
 	}
 
-	addr addr::operator-(std::size_t rhs) {
+	addr addr::operator-(size_t rhs) {
 		addr r = *this;
 		r -= rhs;
 		return r;
 	}
 
-	addr& addr::operator+=(std::size_t rhs) {
+	addr& addr::operator+=(size_t rhs) {
 		this->raw += rhs, this->rva += rhs, this->va += rhs;
 		return *this;
 	}
 
-	addr& addr::operator-=(std::size_t rhs) {
+	addr& addr::operator-=(size_t rhs) {
 		this->raw -= rhs, this->rva -= rhs, this->va -= rhs;
 		return *this;
 	}
@@ -66,11 +66,11 @@ namespace pe32 {
 		, _retn()
 	{}
 
-	PEFile::PEFile(const std::string& fileName) {
+	PEFile::PEFile(const string& fileName) {
 		open(fileName);
 	}
 
-	PEFile::PEFile(const std::size_t fileSize) {
+	PEFile::PEFile(const size_t fileSize) {
 		create(fileSize);
 	}
 
@@ -78,8 +78,8 @@ namespace pe32 {
 		_mem.clear();
 	}
 
-	bool PEFile::open(const std::string& fileName) {
-		std::shared_ptr<void> handle(
+	bool PEFile::open(const string& fileName) {
+		shared_ptr<void> handle(
 			CreateFile(fileName.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr),
 			&CloseHandle
 		);
@@ -101,10 +101,7 @@ namespace pe32 {
 		return true;
 	}
 
-	bool PEFile::create(const std::size_t fileSize) {
-		// I think this is not necessary anymore.
-		// This can be removed someday.
-
+	bool PEFile::create(const size_t fileSize) {
 		if (!fileSize) {
 			throw Exception("PEFile::create", "fileSize is zero");
 		}
@@ -114,8 +111,8 @@ namespace pe32 {
 		return true;
 	}
 
-	bool PEFile::save(const std::string& fileName) {
-		std::shared_ptr<void> handle(
+	bool PEFile::save(const string& fileName) {
+		shared_ptr<void> handle(
 			CreateFile(fileName.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr),
 			&CloseHandle
 		);
@@ -134,7 +131,7 @@ namespace pe32 {
 		return _mem.data();
 	}
 
-	void PEFile::resize(const std::size_t newSize) {
+	void PEFile::resize(const size_t newSize) {
 		if (_fileSize >= newSize) {
 			throw Exception("PEFile::resize", "newSize is less than fileSize");
 		}
@@ -143,15 +140,15 @@ namespace pe32 {
 		setPEHeaders();
 	}
 
-	std::size_t PEFile::getFileSize() const {
+	size_t PEFile::getFileSize() const {
 		return _fileSize;
 	}
 
-	void PEFile::setFileSize(const std::size_t fileSize) {
+	void PEFile::setFileSize(const size_t fileSize) {
 		_fileSize = fileSize;
 	}
 
-	std::string PEFile::getFileName() const {
+	string PEFile::getFileName() const {
 		return _fileName;
 	}
 
@@ -212,11 +209,11 @@ namespace pe32 {
 		return _retn;
 	}
 
-	std::size_t PEFile::getVirtualImageSize() const {
+	size_t PEFile::getVirtualImageSize() const {
 		return align(getLastSection().VirtualAddress + getLastSection().Misc.VirtualSize, *SectionAlignment);
 	}
 
-	std::size_t PEFile::getRawImageSize() const {
+	size_t PEFile::getRawImageSize() const {
 		return getLastSection().PointerToRawData + getLastSection().SizeOfRawData;
 	}
 
@@ -228,7 +225,7 @@ namespace pe32 {
 		return pSecHeader[*NumberOfSections - 1];
 	}
 
-	IMAGE_SECTION_HEADER& PEFile::createNewSection(const std::string& name, const std::size_t size, DWORD chr) {
+	IMAGE_SECTION_HEADER& PEFile::createNewSection(const string& name, const size_t size, DWORD chr) {
 		memcpy(pSecHeader[*NumberOfSections].Name, name.c_str(), name.size() > 8 ? 8 : name.size());
 		pSecHeader[*NumberOfSections].PointerToRawData = align(getLastSection().PointerToRawData + getLastSection().SizeOfRawData, *FileAlignment);
 		pSecHeader[*NumberOfSections].SizeOfRawData = align(size, *FileAlignment);
@@ -287,7 +284,7 @@ namespace pe32 {
 		return ((x + align - 1) / align) * align;
 	}
 
-	PEFile& PEFile::operator<<(const std::vector<BYTE>& bytes) {
+	PEFile& PEFile::operator<<(const vector<BYTE>& bytes) {
 		// this feature needs to have automatical resizing system someday.
 		if (_ptr + bytes.size() >= _fileSize - 1) {
 			throw Exception("PEFile::operator<<", "bytes out of range");
@@ -297,7 +294,7 @@ namespace pe32 {
 		return *this;
 	}
 
-	PEFile& PEFile::operator<<(const std::string& str) {
+	PEFile& PEFile::operator<<(const string& str) {
 		if (_ptr + str.size() + 1 >= _fileSize - 1) {
 			throw Exception("PEFile::operator<<", "str out of range");
 		}
@@ -324,12 +321,12 @@ namespace pe32 {
 		return *this;
 	}
 
-	PEFile& PEFile::operator+=(const std::size_t size) {
+	PEFile& PEFile::operator+=(const size_t size) {
 		setPos(_ptr + size);
 		return *this;
 	}
 
-	void PEFile::copyMemory(const void* src, std::size_t size) {
+	void PEFile::copyMemory(const void* src, size_t size) {
 		if (_ptr + size >= _fileSize - 1) {
 			throw Exception("PEFile::copyMemory", "src out of range");
 		}

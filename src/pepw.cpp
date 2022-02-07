@@ -3,40 +3,39 @@
 #include "PE/PEResource.h"
 #include "PE/PERelocation.h"
 #include "PE/Exception.h"
+#include "Assembler.h"
+#include "Functions.h"
 
-#include "Asm/AsmBuilder.h"
-#include "AsmFunction.h"
-
+using namespace pe32;
 
 int main(int argc, char** argv) {
-
 	if (argc < 2) {
-		std::cout << "Usage: pepw [file name]\n\n";
+		cout << "Usage: pepw [file name]\n\n";
 		return 1;
 	}
 
 	try {
-		std::string input(argv[1]);
-		std::string output(input + "_out.exe");
-		std::string password;
+		string input(argv[1]);
+		string output(input + "_out.exe");
+		string password;
 
-		std::cout << "PEPW x32 v1.0 by ytk2128\n\n";
+		cout << "PEPW x32 v1.0 by ytk2128\n\n";
 
 	prompt:
-		std::cout << "enter the password: ";
-		std::cin >> password;
+		cout << "enter the password: ";
+		cin >> password;
 		if (password.size() > 16) {
-			std::cout << "the password length must be less than 17\n\n";
+			cout << "the password length must be less than 17\n\n";
 			goto prompt;
 		}
 
 		BYTE bOrgHash[32];
 		if (getSHA256(password, bOrgHash)) {
-			throw pe32::Exception("main", "failed to generate SHA256 of password");
+			throw Exception("main", "failed to generate SHA256 of password");
 		}
 
-		pe32::PEFile file(input);
-		pe32::PERelocation reloc(file);
+		PEFile file(input);
+		PERelocation reloc(file);
 
 #pragma region Save old property
 		auto oldTLSDirectory = *(IMAGE_TLS_DIRECTORY*)(file.data() + file.rvaToRaw(file.TLSDirectory->VirtualAddress));
@@ -187,10 +186,8 @@ int main(int argc, char** argv) {
 						}
 					}
 				}
-
 			}
 		}
-
 		file += 4;
 #pragma endregion
 
@@ -207,6 +204,7 @@ int main(int argc, char** argv) {
 		file.copyMemory((void*)SS3, sizeof(SS3));
 #pragma endregion
 
+		Assembler assembler;
 
 #pragma region SEED_KeySchedKey
 		/*
@@ -214,22 +212,16 @@ int main(int argc, char** argv) {
 		* push pdwRoundkey
 		* call func
 		*/
-		auto seedKeySched = file.getPos();
-
-		AsmBuilder SEED_KeySchedKey(asmSEED_KeySchedKey);
-		SEED_KeySchedKey
+		assembler.setScript(asmSEED_KeySchedKey)
 			.setSymbol("SS0", S0.rva)
 			.setSymbol("SS1", S1.rva)
 			.setSymbol("SS2", S2.rva)
-			.setSymbol("SS3", S3.rva)
-			.build();
-
-		if (SEED_KeySchedKey.error()) {
-			std::cerr << "SEED_KeySchedKey Error\n\n";
-			return 1;
+			.setSymbol("SS3", S3.rva);
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build SEED_KeySchedKey");
 		}
-
-		file << SEED_KeySchedKey.getVector();
+		auto seedKeySched = file.getPos();
+		file << assembler.getVector();
 #pragma endregion
 
 #pragma region SEED_Decrypt
@@ -238,98 +230,70 @@ int main(int argc, char** argv) {
 		* push pbData
 		* call func
 		*/
-		auto seedDecrypt = file.getPos();
-
-		AsmBuilder SEED_Decrypt(asmSEED_Decrypt);
-		SEED_Decrypt
+		assembler.setScript(asmSEED_Decrypt)
 			.setSymbol("S0.rva", S0.rva)
 			.setSymbol("S1.rva", S1.rva)
 			.setSymbol("S2.rva", S2.rva)
-			.setSymbol("S3.rva", S3.rva)
-			.build();
-
-		if (SEED_Decrypt.error()) {
-			std::cerr << "SEED_Decrypt Error\n\n";
-			return 1;
+			.setSymbol("S3.rva", S3.rva);
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build SEED_Decrypt");
 		}
-
-		file << SEED_Decrypt.getVector();
+		auto seedDecrypt = file.getPos();
+		file << assembler.getVector();
 #pragma endregion
 
-
 #pragma region Zero Memory
-
 		/*
 		* push size
 		* push ptr
 		* call func
 		*/
-
-		auto zeroMemory = file.getPos();
-
-		AsmBuilder vZeroMemory(asmZeroMemory);
-		vZeroMemory.build();
-		if (vZeroMemory.error()) {
-			std::cerr << "ZeroMemory Error\n\n";
-			return 1;
+		assembler.setScript(asmZeroMemory);
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build Zero Memory");
 		}
-
-		file << vZeroMemory.getVector();
+		auto zeroMemory = file.getPos();
+		file << assembler.getVector();
 #pragma endregion
 
 #pragma region SHA256
-		auto sha256 = file.getPos();
 		/*
 		* push output
 		* push password
 		* call func
 		*/
-
-		AsmBuilder vSHAA256(asmSHA256);
-		vSHAA256
+		assembler.setScript(asmSHA256)
 			.setSymbol("funcCryptAcquireContextA.rva", funcCryptAcquireContextA.rva)
 			.setSymbol("funcCryptCreateHash.rva", funcCryptCreateHash.rva)
 			.setSymbol("funcCryptHashData.rva", funcCryptHashData.rva)
 			.setSymbol("funcCryptGetHashParam.rva", funcCryptGetHashParam.rva)
 			.setSymbol("funcCryptDestroyHash.rva", funcCryptDestroyHash.rva)
 			.setSymbol("funcCryptReleaseContext.rva", funcCryptReleaseContext.rva)
-			.setSymbol("funclstrlenA.rva", funclstrlenA.rva)
-			.build();
-
-		if (vSHAA256.error()) {
-			std::cerr << "SHAA256 Error\n\n";
-			return 1;
+			.setSymbol("funclstrlenA.rva", funclstrlenA.rva);
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build SHA256");
 		}
-
-		file << vSHAA256.getVector();
-
+		auto sha256 = file.getPos();
+		file << assembler.getVector();
 #pragma endregion
 
 #pragma region RtlCompareMemory
-		auto rtlCompareMemory = file.getPos();
 		/*
 		* push size
 		* push buffer2
 		* push buffer1
 		* call func
 		*/
-
-		AsmBuilder vRtlCompareMemory(asmRtlCompareMemory);
-		vRtlCompareMemory.build();
-		if (vRtlCompareMemory.error()) {
-			std::cerr << "RtlCompareMemory Error\n\n";
-			return 1;
+		assembler.setScript(asmRtlCompareMemory);
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build RtlCompareMemory");
 		}
-
-		file << vRtlCompareMemory.getVector();
-
+		auto rtlCompareMemory = file.getPos();
+		file << assembler.getVector();
 #pragma endregion
 
 #pragma region Check Password
-		auto checkPassword = file.getPos();
-
-		AsmBuilder vCheckPassword(asmCheckPassword);
-		vCheckPassword
+		assembler.setScript(asmCheckPassword)
 			.setSymbol("hashBuffer.rva", hashBuffer.rva)
 			.setSymbol("pwBuffer.rva", pwBuffer.rva)
 			.setSymbol("sha256.rva", sha256.rva)
@@ -338,64 +302,48 @@ int main(int argc, char** argv) {
 			.setSymbol("rtlCompareMemory.rva", rtlCompareMemory.rva)
 			.setSymbol("pwBuffer.rva", pwBuffer.rva)
 			.setSymbol("roundKeyBuffer.rva", roundKeyBuffer.rva)
-			.setSymbol("seedKeySched.rva", seedKeySched.rva)
-			.build();
-
-		if (vCheckPassword.error()) {
-			std::cerr << "checkPassword Error\n\n";
-			return 1;
+			.setSymbol("seedKeySched.rva", seedKeySched.rva);
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build Check Password");
 		}
-
-
-		file << vCheckPassword.getVector();
+		auto checkPassword = file.getPos();
+		file << assembler.getVector();
 #pragma endregion
 
 #pragma region Dialog Procedure
 		// if the password is correct, the return value of EndDialog will be 0, otherwise 1.
-		auto dialogProc = file.getPos();
-
-		AsmBuilder vDialogProcedure(asmDialogProcedure);
-		vDialogProcedure
+		assembler.setScript(asmDialogProcedure)
 			.setSymbol("pwBuffer.rva", pwBuffer.rva)
 			.setSymbol("zeroMemory.rva", zeroMemory.rva)
 			.setSymbol("funcGetDlgItemTextA.rva", funcGetDlgItemTextA.rva)
 			.setSymbol("funclstrlenA.rva", funclstrlenA.rva)
 			.setSymbol("checkPassword.rva", checkPassword.rva)
-			.setSymbol("funcEndDialog.rva", funcEndDialog.rva)
-			.build();
-
-		if (vDialogProcedure.error()) {
-			std::cerr << "DialogProcedure Error\n\n";
-			return 1;
+			.setSymbol("funcEndDialog.rva", funcEndDialog.rva);
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build Dialog Procedure");
 		}
-
-
-		file << vDialogProcedure.getVector();
+		auto dialogProc = file.getPos();
+		file << assembler.getVector();
 #pragma endregion
 
-#pragma region Kernel32 Function
-		auto kernel32Function = file.getPos();
-		AsmBuilder vKernel32Function(asmKernel32Function);
-		vKernel32Function.build();
-		if (vKernel32Function.error()) {
-			std::cerr << "Kernel32Function Error\n\n";
-			return 1;
+#pragma region Kernel32 Parser
+		assembler.setScript(asmKernel32Parser);
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build Kernel32 Parser");
 		}
-		file << vKernel32Function.getVector();
+		auto kernel32Parser = file.getPos();
+		file << assembler.getVector();
 #pragma endregion
 
 #pragma region TLS Callback
 		auto tlsCallback = file.getPos();
 		if (file.TLSDirectory->VirtualAddress) {
-
-			AsmBuilder vTLSCallback(asmTLSCallback);
-			vTLSCallback.setSymbol("AddressOfCallBacks.RVA", oldTLSDirectory.AddressOfCallBacks - *file.ImageBase);
-			vTLSCallback.build();
-			if (vTLSCallback.error()) {
-				std::cerr << "TLSCallback Error\n\n";
-				return 1;
+			assembler.setScript(asmTLSCallback)
+				.setSymbol("AddressOfCallBacks", oldTLSDirectory.AddressOfCallBacks - *file.ImageBase);
+			if (assembler.build() == false) {
+				throw Exception("main", "failed to build TLS Callback");
 			}
-			file << vTLSCallback.getVector();
+			file << assembler.getVector();
 		}
 #pragma endregion
 
@@ -405,41 +353,33 @@ int main(int argc, char** argv) {
 		auto entryPoint = file.getPos();
 
 #pragma region Prologue
-
-		AsmBuilder Prologue(
-			R"(
-				pushad
-				mov ebx, dword ptr fs:[0x00000030]
-				mov ebx, dword ptr ds:[ebx+0x8]
-				lea ebp, ds:[ebx+kernel32Function.rva]
-				push hashGenerate("VirtualProtect")
-				call ebp
-				lea edx, ds:[ebx+dwordBuffer.rva]
-				push edx
-				push PAGE_EXECUTE_READWRITE
-				push oldSizeOfImage
-				push ebx
-				call eax
-			)"
-		);
-		Prologue
-			.setSymbol("kernel32Function.rva", kernel32Function.rva)
+		assembler.setScript(R"(
+			pushad
+			mov ebx, dword ptr fs:[0x00000030]
+			mov ebx, dword ptr ds:[ebx+0x8]
+			lea ebp, ds:[ebx+kernel32Parser.rva]
+			push hVirtualProtect
+			call ebp
+			lea edx, ds:[ebx+dwordBuffer.rva]
+			push edx
+			push PAGE_EXECUTE_READWRITE
+			push oldSizeOfImage
+			push ebx
+			call eax
+		)")
+			.setSymbol("kernel32Parser.rva", kernel32Parser.rva)
 			.setSymbol("dwordBuffer.rva", dwordBuffer.rva)
 			.setSymbol("PAGE_EXECUTE_READWRITE", PAGE_EXECUTE_READWRITE)
 			.setSymbol("oldSizeOfImage", oldSizeOfImage)
-			.setFunction("hashGenerate", [](std::string arg)->uint32_t { return hashGenerate(arg); })
-			.build();
-
-		if (Prologue.error()) {
-			std::cerr << "Prologue Error\n\n";
-			return 1;
+			.setSymbol("hVirtualProtect", hashGenerate("VirtualProtect"));
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build Prologue");
 		}
-		file << Prologue.getVector();
+		file << assembler.getVector();
 #pragma endregion
 
 #pragma region Initialize variables
-		AsmBuilder InitializeVariables(asmInitializeVariables);
-		InitializeVariables
+		assembler.setScript(asmInitializeVariables)
 			.setSymbol("funcLoadLibraryA.rva", funcLoadLibraryA.rva)
 			.setSymbol("szUser32.rva", szUser32.rva)
 			.setSymbol("baseUser32.rva", baseUser32.rva)
@@ -466,20 +406,19 @@ int main(int argc, char** argv) {
 			.setSymbol("funcCryptGetHashParam.rva", funcCryptGetHashParam.rva)
 			.setSymbol("szCryptHashData.rva", szCryptHashData.rva)
 			.setSymbol("funcCryptHashData.rva", funcCryptHashData.rva)
-			.setFunction("hashGenerate", [](std::string arg)->uint32_t { return hashGenerate(arg); })
-			.build();
-
-		if (InitializeVariables.error()) {
-			std::cerr << "InitializeVariables Error\n\n";
-			return 1;
+			.setSymbol("hLoadLibraryA", hashGenerate("LoadLibraryA"))
+			.setSymbol("hGetProcAddress", hashGenerate("GetProcAddress"))
+			.setSymbol("hlstrlenA", hashGenerate("lstrlenA"))
+			.setSymbol("hlstrcmpA", hashGenerate("lstrcmpA"));
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build Initialize variables");
 		}
-		file << InitializeVariables.getVector();
-
+		file << assembler.getVector();
 #pragma endregion
 
 #pragma region Show password dialog
 		// Show dialog
-		AsmBuilder ShowPasswordDialog(R"(
+		assembler.setScript(R"(
 			push 0x0
 			lea edx, ds:[ebx+dialogProc.rva]
 			push edx
@@ -488,28 +427,24 @@ int main(int argc, char** argv) {
 			push edx
 			push ebx
 			call dword ptr ds:[ebx+funcDialogBoxIndirectParamA.rva]
-		)");
-		ShowPasswordDialog
+		)")
 			.setSymbol("dialogProc.rva", dialogProc.rva)
 			.setSymbol("dialogTemplate.rva", dialogTemplate.rva)
-			.setSymbol("funcDialogBoxIndirectParamA.rva", funcDialogBoxIndirectParamA.rva)
-			.build();
-
-		if (ShowPasswordDialog.error()) {
-			std::cerr << "ShowPasswordDialog Error\n\n";
-			return 1;
+			.setSymbol("funcDialogBoxIndirectParamA.rva", funcDialogBoxIndirectParamA.rva);
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build Show password dialog");
 		}
-		file << ShowPasswordDialog.getVector();
+		file << assembler.getVector();
 #pragma endregion
 
 #pragma region Decrypt sections
 		// check eax. if eax is 1, dialog was closed by the user so exit process.
 		// if eax is 0, the password is correct so decrypt binary using generated round key.
 
-		AsmBuilder DecryptSections(R"(
+		assembler.setScript(R"(
 			test eax, eax
 			je label_decrypt
-			push hashGenerate("ExitProcess")
+			push hExitProcess
 			call ebp
 			push 0x0
 			call eax
@@ -538,24 +473,21 @@ int main(int argc, char** argv) {
 			add ecx, 0x8
 			jmp loop
 		end:
-		)");
-		DecryptSections
+		)")
+			.setSymbol("hExitProcess", hashGenerate("ExitProcess"))
 			.setSymbol("sectionAddrBuffer.rva", sectionAddrBuffer.rva)
 			.setSymbol("roundKeyBuffer.rva", roundKeyBuffer.rva)
-			.setSymbol("seedDecrypt.rva", seedDecrypt.rva)
-			.setFunction("hashGenerate", [](std::string arg)->uint32_t { return hashGenerate(arg); })
-			.build();
-		if (DecryptSections.error()) {
-			std::cerr << "ShowPasswordDialog Error\n\n";
-			return 1;
+			.setSymbol("seedDecrypt.rva", seedDecrypt.rva);
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build Decrypt sections");
 		}
-		file << DecryptSections.getVector();
+		file << assembler.getVector();
 #pragma endregion
 
 #pragma region Recover PE Header
 		// Recover import directory
 		if (file.ImportDirectory->VirtualAddress) {
-			AsmBuilder RecoverImportDirectory(R"(
+			assembler.setScript(R"(
 				lea esi, ds:[ebx+ImportDirectoryRVA]
 			loop1:
 				mov eax, dword ptr ds:[esi+0xC]
@@ -594,27 +526,22 @@ int main(int argc, char** argv) {
 			end:
 				mov dword ptr ds:[ebx+ImportDirectoryRVA.Offset], ImportDirectoryRVA
 				mov dword ptr ds:[ebx+ImportDirectorySize.Offset], ImportDirectorySize
-		)");
-			RecoverImportDirectory
+			)")
 				.setSymbol("funcLoadLibraryA.rva", funcLoadLibraryA.rva)
 				.setSymbol("funcGetProcAddress.rva", funcGetProcAddress.rva)
 				.setSymbol("ImportDirectoryRVA.Offset", (DWORD)((BYTE*)file.ImportDirectory - file.data()))
 				.setSymbol("ImportDirectorySize.Offset", (DWORD)((BYTE*)file.ImportDirectory - file.data()) + 4)
 				.setSymbol("ImportDirectorySize", file.ImportDirectory->Size)
-				.setSymbol("ImportDirectoryRVA", file.ImportDirectory->VirtualAddress)
-				.build();
-
-			if (RecoverImportDirectory.error()) {
-				std::cerr << "RecoverImportDirectory Error\n\n";
-				return 1;
+				.setSymbol("ImportDirectoryRVA", file.ImportDirectory->VirtualAddress);
+			if (assembler.build() == false) {
+				throw Exception("main", "failed to build Recover import directory");
 			}
-			file << RecoverImportDirectory.getVector();
+			file << assembler.getVector();
 		}
 
 		// Recover relocation directory
 		if (*file.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE && oldRelocationDirectory.rva) {
-
-			AsmBuilder RecoverRelocationDirectory(R"(
+			assembler.setScript(R"(
 				mov edi, ImageBase
 				lea esi, ds:[ebx+oldRelocationDirectory.rva]
 			loop1:
@@ -641,60 +568,44 @@ int main(int argc, char** argv) {
 				sub ecx, 0x2
 				jmp loop2
 			end:
-)");
-
-			RecoverRelocationDirectory
+			)")
 				.setSymbol("ImageBase", *file.ImageBase)
-				.setSymbol("oldRelocationDirectory.rva", oldRelocationDirectory.rva)
-				.build();
-			if (RecoverRelocationDirectory.error()) {
-				std::cerr << "RecoverRelocationDirectory Error\n\n";
-				return 1;
+				.setSymbol("oldRelocationDirectory.rva", oldRelocationDirectory.rva);
+			if (assembler.build() == false) {
+				throw Exception("main", "failed to build Recover relocation directory");
 			}
-			file << RecoverRelocationDirectory.getVector();
-
+			file << assembler.getVector();
 		}
 
-		// Recover TLS directory
+		// Call TLS callbacks
 		if (file.TLSDirectory->VirtualAddress) {
-
-			AsmBuilder RecoverTLSDirectory(R"(
+			assembler.setScript(R"(
 				push 0
 				push 1
 				push ebx
 				lea edx, ds:[ebx+tlsCallback.rva]
 				call edx
-			)");
-			RecoverTLSDirectory
-				.setSymbol("tlsCallback.rva", tlsCallback.rva)
-				.build();
-
-			if (RecoverTLSDirectory.error()) {
-				std::cerr << "RecoverTLSDirectory Error\n\n";
-				return 1;
+			)")
+				.setSymbol("tlsCallback.rva", tlsCallback.rva);
+			if (assembler.build() == false) {
+				throw Exception("main", "failed to build Call TLS callbacks");
 			}
-			file << RecoverTLSDirectory.getVector();
+			file << assembler.getVector();
 		}
 #pragma endregion
 
 #pragma region Epilogue
-
-		AsmBuilder Epilogue(R"(
+		assembler.setScript(R"(
 			lea edx, ds:[ebx+OEP.rva]
 			mov dword ptr ss:[esp+0x1C], edx
 			popad
 			jmp dword ptr ss:[esp-0x4]
-		)");
-		Epilogue
-			.setSymbol("OEP.rva", *file.AddressOfEntryPoint)
-			.build();
-
-		if (Epilogue.error()) {
-			std::cerr << "RecoverTLSDirectory Error\n\n";
-			return 1;
+		)")
+			.setSymbol("OEP.rva", *file.AddressOfEntryPoint);
+		if (assembler.build() == false) {
+			throw Exception("main", "failed to build Epilogue");
 		}
-		file << Epilogue.getVector();
-
+		file << assembler.getVector();
 #pragma endregion
 
 #pragma endregion
@@ -719,11 +630,10 @@ int main(int argc, char** argv) {
 		file.save(output);
 #pragma endregion
 
-		std::cout << "the file is successfully encrypted.\n\n";
-
+		cout << "the file is successfully encrypted.\n\n";
 	}
-	catch (pe32::Exception& ex) {
-		std::cout << ex.get() << "\n";
+	catch (Exception& ex) {
+		cerr << ex.get() << "\n";
 		return 1;
 	}
 

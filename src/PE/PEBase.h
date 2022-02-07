@@ -4,7 +4,7 @@
 #include <string>
 #include <Windows.h>
 
-#define VECTOR(...) std::vector<BYTE>({__VA_ARGS__})
+using namespace std;
 
 namespace pe32 {
 	class addr {
@@ -20,10 +20,10 @@ namespace pe32 {
 		void reset(addr& address);
 		void reset(DWORD _raw, DWORD _rva, DWORD _va);
 
-		addr operator+(std::size_t rhs);
-		addr operator-(std::size_t rhs);
-		addr& operator+=(std::size_t rhs);
-		addr& operator-=(std::size_t rhs);
+		addr operator+(size_t rhs);
+		addr operator-(size_t rhs);
+		addr& operator+=(size_t rhs);
+		addr& operator-=(size_t rhs);
 		bool operator==(addr& rhs) const;
 		bool operator!=(addr& rhs) const;
 	};
@@ -64,19 +64,19 @@ namespace pe32 {
 	class PEFile : public PEHeader {
 	public:
 		PEFile();
-		explicit PEFile(const std::string& fileName);
-		explicit PEFile(const std::size_t fileSize);
+		explicit PEFile(const string& fileName);
+		explicit PEFile(const size_t fileSize);
 		~PEFile();
 
-		bool open(const std::string& fileName);
-		bool create(const std::size_t fileSize);
-		bool save(const std::string& fileName);
+		bool open(const string& fileName);
+		bool create(const size_t fileSize);
+		bool save(const string& fileName);
 
 		BYTE* data();
-		void resize(const std::size_t newSize);
-		std::size_t getFileSize() const;
-		void setFileSize(const std::size_t fileSize);
-		std::string getFileName() const;
+		void resize(const size_t newSize);
+		size_t getFileSize() const;
+		void setFileSize(const size_t fileSize);
+		string getFileName() const;
 
 		/* Converting Addresses */
 		DWORD rvaToRaw(DWORD rva) const;
@@ -87,12 +87,12 @@ namespace pe32 {
 		addr rawToAddr(DWORD raw) const;
 		addr vaToAddr(DWORD va) const;
 
-		std::size_t getVirtualImageSize() const;
-		std::size_t getRawImageSize() const;
+		size_t getVirtualImageSize() const;
+		size_t getRawImageSize() const;
 
 		IMAGE_SECTION_HEADER& getFirstSection() const;
 		IMAGE_SECTION_HEADER& getLastSection() const;
-		IMAGE_SECTION_HEADER& createNewSection(const std::string& name, const std::size_t size, DWORD chr);
+		IMAGE_SECTION_HEADER& createNewSection(const string& name, const size_t size, DWORD chr);
 
 		void setPos(DWORD raw);
 		addr getPos();
@@ -104,19 +104,19 @@ namespace pe32 {
 		DWORD align(DWORD x, DWORD align) const;
 
 	public:
-		PEFile& operator<<(const std::vector<BYTE>& bytes);
-		PEFile& operator<<(const std::string& str);
+		PEFile& operator<<(const vector<BYTE>& bytes);
+		PEFile& operator<<(const string& str);
 		PEFile& operator<<(const WORD w);
 		PEFile& operator<<(const DWORD dw);
-		PEFile& operator+=(const std::size_t size);
+		PEFile& operator+=(const size_t size);
 
-		void copyMemory(const void* src, std::size_t size);
+		void copyMemory(const void* src, size_t size);
 
 	private:
-		std::vector<BYTE> _mem;
-		std::size_t _ptr;
-		std::string _fileName;
-		std::size_t _fileSize;
+		vector<BYTE> _mem;
+		size_t _ptr;
+		string _fileName;
+		size_t _fileSize;
 		mutable addr _retn;
 	};
 }

@@ -1,6 +1,6 @@
-[submodule "src/ASM/asmtk"]
-	path = src/deps/asmtk
-	url = https://github.com/asmjit/asmtk.git
-[submodule "src/ASM/asmjit"]
-	path = src/deps/asmjit
+[submodule "dep/asmjit"]
+	path = dep/asmjit
 	url = https://github.com/asmjit/asmjit.git
+[submodule "dep/asmtk"]
+	path = dep/asmtk
+	url = https://github.com/asmjit/asmtk.git

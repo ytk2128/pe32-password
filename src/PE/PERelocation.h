@@ -1,6 +1,8 @@
 #pragma once
 #include "PEBase.h"
 
+using namespace std;
+
 namespace pe32 {
 	class PERelocation {
 	public:
@@ -11,6 +13,6 @@ namespace pe32 {
 
 	private:
 		PEFile& _file;
-		std::vector<std::pair<DWORD, std::vector<WORD>>> _data;
+		vector<pair<DWORD, vector<WORD>>> _data;
 	};
 }

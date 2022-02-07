@@ -4,6 +4,8 @@
 #include <wincrypt.h>
 #include "SEED128/KISA_SEED_ECB.h"
 
+using namespace std;
+
 BYTE dialogTemplateRawData[] = {
 	0x01, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x08, 0xc8, 0x80,
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0xb9, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x45, 0x00,
@@ -16,19 +18,19 @@ BYTE dialogTemplateRawData[] = {
 	0x00, 0x00, 0x00, 0x00
 };
 
-DWORD hashGenerate(const std::string& str) {
+DWORD hashGenerate(const string& str) {
 	DWORD hash = 0;
 	DWORD poly = 0xEDB88320;
 
 	for (auto i = 0u; i <= str.size(); i++) {
-		poly = (poly << 1) | (poly >> 31); // 1bit Left Shift
+		poly = (poly << 1) | (poly >> 31);
 		hash = (DWORD)(poly * hash + str[i]);
 	}
 
 	return hash;
 }
 
-int getSHA256(const std::string& password, BYTE* output) {
+int getSHA256(const string& password, BYTE* output) {
 	HCRYPTPROV hProv = NULL;
 	HCRYPTPROV hHash = NULL;
 	DWORD cbHashSize = 32;
@@ -61,7 +63,7 @@ label_exit2:
 	return dwRetn;
 }
 
-void encryptData(BYTE* data, std::size_t size, DWORD* roundKey) {
+void encryptData(BYTE* data, size_t size, DWORD* roundKey) {
 	auto end = data + size - 16;
 	for (; data <= end; data++) {
 		SEED_Encrypt(data, roundKey);

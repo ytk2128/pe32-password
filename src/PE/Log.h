@@ -6,6 +6,8 @@
 #include <ctime>
 #include <cstdarg>
 
+using namespace std;
+
 namespace pe32 {
 	class Log {
 	public:
@@ -20,7 +22,7 @@ namespace pe32 {
 			localtime_s(&lt, &t);
 
 			char time[80] = {};
-			std::strftime(time, 80, "%m/%d/%Y %H:%M:%S", &lt);
+			strftime(time, 80, "%m/%d/%Y %H:%M:%S", &lt);
 
 			char log[1024] = {};
 			va_list aptr;
@@ -28,29 +30,29 @@ namespace pe32 {
 			vsnprintf(log, 1024, format, aptr);
 			va_end(aptr);
 
-			std::ostringstream line;
+			ostringstream line;
 			line << "[" << time << "] " << log;
 			_logs.push_back(line.str().c_str());
 		}
 
-		std::string getLogs() const {
-			std::ostringstream logs;
+		string getLogs() const {
+			ostringstream logs;
 			for (auto& i : _logs) {
-				logs << i << std::endl;
+				logs << i << endl;
 			}
 			return logs.str();
 		}
 
 		void print(bool all = false) {
 			if (all) {
-				std::cout << getLogs() << std::endl;
+				cout << getLogs() << endl;
 			}
 			else {
-				std::cout << _logs.back() << std::endl;
+				cout << _logs.back() << endl;
 			}
 		}
 
 	private:
-		std::vector<std::string> _logs;
+		vector<string> _logs;
 	};
 }

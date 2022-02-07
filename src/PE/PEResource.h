@@ -2,27 +2,29 @@
 #include <tuple>
 #include "PEBase.h"
 
+using namespace std;
+
 namespace pe32 {
 	class PEResource {
 	public:
 		PEResource(PEFile& file);
 		void push_entry(DWORD name);
-		void push_data(DWORD id, DWORD name, BYTE* data, std::size_t size);
+		void push_data(DWORD id, DWORD name, BYTE* data, size_t size);
 		void build();
-		std::size_t size() const;
+		size_t size() const;
 
 	private:
 
 
 	private:
-		using ResourceEntry = std::vector<std::tuple<DWORD, DWORD, std::vector<BYTE>>>;
-		using ResourceData = std::pair<DWORD, ResourceEntry>;
+		using ResourceEntry = vector<tuple<DWORD, DWORD, vector<BYTE>>>;
+		using ResourceData = pair<DWORD, ResourceEntry>;
 		PEFile& _file;
-		std::vector<ResourceData> _rData;
-		std::size_t _baseDirSize;
-		std::size_t _subDirSize;
-		std::size_t _finalDirSize;
-		std::size_t _dataEntrySize;
-		std::size_t _dataSize;
+		vector<ResourceData> _rData;
+		size_t _baseDirSize;
+		size_t _subDirSize;
+		size_t _finalDirSize;
+		size_t _dataEntrySize;
+		size_t _dataSize;
 	};
 }
