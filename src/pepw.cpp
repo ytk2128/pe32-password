@@ -63,7 +63,6 @@ int main(int argc, char** argv) {
 
 			auto size = oldTLSDirectory.EndAddressOfRawData - oldTLSDirectory.StartAddressOfRawData;
 			auto pTLSDirectory = (IMAGE_TLS_DIRECTORY*)(file.data() + tlsDirectory.raw);
-			pTLSDirectory->AddressOfCallBacks = 0;
 			pTLSDirectory->StartAddressOfRawData = file.getPos().va;
 			pTLSDirectory->EndAddressOfRawData = pTLSDirectory->StartAddressOfRawData + size;
 			file += size + 1;
